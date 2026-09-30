@@ -1,0 +1,43 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: wepay-ms-auditoria
+
+  # 1. Configuración de Base de Datos Oracle exigida por el caso
+  datasource:
+    # Si DB_HOST no existe, usa localhost. Si existe, usa su valor (ej: oracle-db).
+    url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1521}/${DB_NAME:XE}
+    username: ${DB_USER:system}
+    password: ${DB_PASSWORD:oracle}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  # 2. Configuración de JPA / Hibernate
+  jpa:
+    hibernate:
+      # 'update' crea las tablas automáticamente si no existen
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        format_sql: true
+
+  # 3. Configuración del Consumidor de Kafka
+  kafka:
+    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    consumer:
+      # Identificador único para el grupo de consumidores de este microservicio
+      group-id: audit-group
+      # Si el servicio se cae, al volver a levantar leerá desde el último mensaje no procesado
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+# 4. Variables personalizadas de nuestra aplicación
+app:
+  kafka:
+    topic:
+      # Tópico canónico de eventos de negocio a escuchar
+      orders: orders.events
