@@ -25,12 +25,11 @@ spring:
         format_sql: true
 
   # 3. Configuración del Consumidor de Kafka
+
   kafka:
     bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
     consumer:
-      # Identificador único para el grupo de consumidores de este microservicio
-      group-id: audit-group
-      # Si el servicio se cae, al volver a levantar leerá desde el último mensaje no procesado
+      group-id: wepay-auditoria-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

@@ -1,5 +1,7 @@
 package cl.duoc.wepay_ms_auditoria.entity;
 
+import jakarta.persistence.Lob;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,6 +17,9 @@ public class EventoAuditoria {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "event_id", unique = true)
+    private String eventId;
+
     // Quién (El usuario que disparó el evento)
     private String usuarioOid;
 
@@ -29,13 +34,16 @@ public class EventoAuditoria {
 
     // Desde dónde (Ej: Detalles técnicos, IP, origen, etc.)
     private String origen;
-    
+
     // El mensaje original en formato JSON (para trazabilidad completa)
+    @Lob
     private String payload;
 
-    public EventoAuditoria() {}
+    public EventoAuditoria() {
+    }
 
-    public EventoAuditoria(String usuarioOid, String tipoEvento, String entidadId, LocalDateTime fechaEvento, String origen, String payload) {
+    public EventoAuditoria(String usuarioOid, String tipoEvento, String entidadId, LocalDateTime fechaEvento,
+            String origen, String payload) {
         this.usuarioOid = usuarioOid;
         this.tipoEvento = tipoEvento;
         this.entidadId = entidadId;
@@ -44,24 +52,67 @@ public class EventoAuditoria {
         this.payload = payload;
     }
 
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getUsuarioOid() { return usuarioOid; }
-    public void setUsuarioOid(String usuarioOid) { this.usuarioOid = usuarioOid; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public String getTipoEvento() { return tipoEvento; }
-    public void setTipoEvento(String tipoEvento) { this.tipoEvento = tipoEvento; }
+    public String getEventId() {
+        return eventId;
+    }
 
-    public String getEntidadId() { return entidadId; }
-    public void setEntidadId(String entidadId) { this.entidadId = entidadId; }
+    public void setEventId(String eventId) {
+        this.eventId = eventId;
+    }
 
-    public LocalDateTime getFechaEvento() { return fechaEvento; }
-    public void setFechaEvento(LocalDateTime fechaEvento) { this.fechaEvento = fechaEvento; }
+    public String getUsuarioOid() {
+        return usuarioOid;
+    }
 
-    public String getOrigen() { return origen; }
-    public void setOrigen(String origen) { this.origen = origen; }
+    public void setUsuarioOid(String usuarioOid) {
+        this.usuarioOid = usuarioOid;
+    }
 
-    public String getPayload() { return payload; }
-    public void setPayload(String payload) { this.payload = payload; }
+    public String getTipoEvento() {
+        return tipoEvento;
+    }
+
+    public void setTipoEvento(String tipoEvento) {
+        this.tipoEvento = tipoEvento;
+    }
+
+    public String getEntidadId() {
+        return entidadId;
+    }
+
+    public void setEntidadId(String entidadId) {
+        this.entidadId = entidadId;
+    }
+
+    public LocalDateTime getFechaEvento() {
+        return fechaEvento;
+    }
+
+    public void setFechaEvento(LocalDateTime fechaEvento) {
+        this.fechaEvento = fechaEvento;
+    }
+
+    public String getOrigen() {
+        return origen;
+    }
+
+    public void setOrigen(String origen) {
+        this.origen = origen;
+    }
+
+    public String getPayload() {
+        return payload;
+    }
+
+    public void setPayload(String payload) {
+        this.payload = payload;
+    }
 }
