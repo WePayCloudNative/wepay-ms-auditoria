@@ -10,19 +10,23 @@ import org.springframework.stereotype.Component;
 
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
+import cl.duoc.wepay_ms_auditoria.producer.AuditoriaTimelineProducer;
 
 @Component
 public class AuditoriaConsumer {
 
     private final AuditoriaService auditoriaService;
     private final ObjectMapper objectMapper;
+    private final AuditoriaTimelineProducer timelineProducer;
 
     public AuditoriaConsumer(
             AuditoriaService auditoriaService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AuditoriaTimelineProducer timelineProducer) {
 
         this.auditoriaService = auditoriaService;
         this.objectMapper = objectMapper;
+        this.timelineProducer = timelineProducer;
     }
 
     @KafkaListener(topics = "${app.kafka.topic.orders}", groupId = "${spring.kafka.consumer.group-id}")
@@ -59,15 +63,29 @@ public class AuditoriaConsumer {
 
         // Guardar el evento, validando duplicados en el servicio
 
-        auditoriaService.registrarEvento(
-            eventId,
-            fechaEvento,
-            usuarioOid,
-            tipoEvento,
-            pedidoId,
-            "wepay-ms-pedidos",
-            mensaje
-        );
+        boolean eventoNuevo = auditoriaService.registrarEvento(
+                eventId,
+                fechaEvento,
+                usuarioOid,
+                tipoEvento,
+                pedidoId,
+                "wepay-ms-pedidos",
+                mensaje);
+
+        if (eventoNuevo) {
+
+            timelineProducer.publicarEvento(
+                    pedidoId,
+                    mensaje);
+
+            System.out.println(
+                    "Publicacion solicitada en audit.timeline: " + eventId);
+
+        } else {
+
+            System.out.println(
+                    "Evento duplicado: no se vuelve a publicar en audit.timeline");
+        }
 
     }
 }

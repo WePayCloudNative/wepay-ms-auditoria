@@ -19,7 +19,7 @@ public class AuditoriaService {
     }
 
     @Transactional
-    public void registrarEvento(
+    public boolean registrarEvento(
             String eventId,
             LocalDateTime fechaEvento,
             String usuarioOid,
@@ -36,7 +36,7 @@ public class AuditoriaService {
         if (repository.existsByEventId(eventId)) {
             System.out.println(
                     "Evento duplicado ignorado: " + eventId);
-            return;
+            return false;
         }
 
         EventoAuditoria evento = new EventoAuditoria(
@@ -53,6 +53,7 @@ public class AuditoriaService {
 
         System.out.println(
                 "Evento registrado correctamente: " + eventId);
+        return true;
     }
 
     // Métodos de solo lectura para el panel de administración
@@ -84,4 +85,45 @@ public class AuditoriaService {
                 e.getOrigen(),
                 e.getPayload());
     }
+
+    @Transactional(readOnly = true)
+    public List<EventoAuditoriaResponse> filtrarEventos(
+            String tipoEvento,
+            LocalDateTime desde,
+            LocalDateTime hasta) {
+
+        List<EventoAuditoria> eventos;
+
+        // Caso 1: filtrar por tipo y rango de fechas
+        if (tipoEvento != null && !tipoEvento.isBlank()
+                && desde != null && hasta != null) {
+
+            eventos = repository
+                    .findByTipoEventoAndFechaEventoBetweenOrderByFechaEventoDesc(
+                            tipoEvento, desde, hasta);
+
+            // Caso 2: filtrar solo por tipo de evento
+        } else if (tipoEvento != null && !tipoEvento.isBlank()) {
+
+            eventos = repository
+                    .findByTipoEventoOrderByFechaEventoDesc(tipoEvento);
+
+            // Caso 3: filtrar solo por rango de fechas
+        } else if (desde != null && hasta != null) {
+
+            eventos = repository
+                    .findByFechaEventoBetweenOrderByFechaEventoDesc(
+                            desde, hasta);
+
+            // Caso 4: sin filtros
+        } else {
+
+            eventos = repository.findAll();
+        }
+
+        return eventos.stream()
+                .map(this::convertirADto)
+                .toList();
+    }
+
 }
