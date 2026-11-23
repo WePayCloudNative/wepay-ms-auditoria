@@ -5,42 +5,42 @@ spring:
   application:
     name: wepay-ms-auditoria
 
-  # 1. Configuración de Base de Datos Oracle exigida por el caso
+  # 1. Base de datos Oracle (Amazon RDS en AWS).
+  #    URL, usuario y clave llegan por variables de entorno; nunca se suben al repositorio.
+  #    Para desarrollar sin Oracle, usar el perfil "local" (H2 en memoria).
   datasource:
-    # Si DB_HOST no existe, usa localhost. Si existe, usa su valor (ej: oracle-db).
-    url: jdbc:oracle:thin:@//${DB_HOST:localhost}:${DB_PORT:1521}/${DB_NAME:XE}
-    username: ${DB_USER:system}
-    password: ${DB_PASSWORD:oracle}
+    url: ${DB_URL:jdbc:oracle:thin:@//localhost:1521/XEPDB1}
+    username: ${DB_USER:auditoria}
+    password: ${DB_PASSWORD:}
     driver-class-name: oracle.jdbc.OracleDriver
 
-  # 2. Configuración de JPA / Hibernate
+  # 2. JPA / Hibernate: 'update' crea las tablas en el esquema del usuario si no existen
   jpa:
     hibernate:
-      # 'update' crea las tablas automáticamente si no existen
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: ${JPA_DDL_AUTO:update}
+    show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         dialect: org.hibernate.dialect.OracleDialect
-        format_sql: true
 
-  # 3. Configuración del Consumidor de Kafka
-
+  # 3. Kafka: mismo nombre de variable que ms-pedidos y ms-reportes
   kafka:
-    bootstrap-servers: ${KAFKA_SERVERS:localhost:9092}
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: wepay-auditoria-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
-# 4. Variables personalizadas de nuestra aplicación
+# 4. Variables propias de la aplicación
 app:
   kafka:
     topic:
       # Tópico canónico de eventos de negocio a escuchar
       orders: orders.events
+      # Eventos que no se pudieron procesar después de los reintentos
+      dlt: orders.events.auditoria.DLT
