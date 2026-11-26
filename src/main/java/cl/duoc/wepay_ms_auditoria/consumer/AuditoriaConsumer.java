@@ -1,6 +1,7 @@
 
 package cl.duoc.wepay_ms_auditoria.consumer;
 
+import cl.duoc.wepay_ms_auditoria.dto.DatosEvento;
 import cl.duoc.wepay_ms_auditoria.service.AuditoriaService;
 
 import java.time.LocalDateTime;
@@ -64,13 +65,7 @@ public class AuditoriaConsumer {
         // Guardar el evento, validando duplicados en el servicio
 
         boolean eventoNuevo = auditoriaService.registrarEvento(
-                eventId,
-                fechaEvento,
-                usuarioOid,
-                tipoEvento,
-                pedidoId,
-                "wepay-ms-pedidos",
-                mensaje);
+                leerDatos(evento, fechaEvento, mensaje));
 
         if (eventoNuevo) {
 
@@ -87,5 +82,34 @@ public class AuditoriaConsumer {
                     "Evento duplicado: no se vuelve a publicar en audit.timeline");
         }
 
+    }
+
+    /**
+     * Arma lo que se guarda a partir del JSON de Kafka.
+     * Los campos del actor son opcionales: los eventos antiguos no los traen.
+     */
+    static DatosEvento leerDatos(JsonNode evento, LocalDateTime fechaEvento, String mensaje) {
+        return new DatosEvento(
+                texto(evento, "eventId"),
+                fechaEvento,
+                texto(evento, "usuarioOid"),
+                texto(evento, "tipoEvento"),
+                texto(evento, "pedidoId"),
+                "wepay-ms-pedidos",
+                mensaje,
+                texto(evento, "actorOid"),
+                texto(evento, "actorRol"),
+                texto(evento, "estadoAnterior"),
+                texto(evento, "estado"));
+    }
+
+    /** Texto del campo, o null si no viene, viene en null o vacío. */
+    private static String texto(JsonNode evento, String campo) {
+        JsonNode valor = evento.path(campo);
+        if (valor.isMissingNode() || valor.isNull()) {
+            return null;
+        }
+        String texto = valor.asText();
+        return texto.isBlank() ? null : texto;
     }
 }
