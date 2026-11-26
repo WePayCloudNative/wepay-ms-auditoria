@@ -2,14 +2,15 @@ package cl.duoc.wepay_ms_auditoria.consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import cl.duoc.wepay_ms_auditoria.dto.DatosEvento;
+import cl.duoc.wepay_ms_auditoria.dto.EventoAuditadoDTO;
 import cl.duoc.wepay_ms_auditoria.producer.AuditoriaTimelineProducer;
 import cl.duoc.wepay_ms_auditoria.service.AuditoriaService;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +24,8 @@ class AuditoriaConsumerTest {
 
     private static final String EVENTO_NUEVO = """
             {"eventId":"e-1","tipoEvento":"OrderDispatched","pedidoId":15,
-             "usuarioOid":"oid-cliente","estado":"DESPACHADO","fechaEvento":"2026-11-24T20:00:00",
+             "usuarioOid":"oid-cliente","total":89990.0,"estado":"DESPACHADO",
+             "fechaEvento":"2026-11-24T20:00:00","detalles":[{"productoId":1,"cantidad":1}],
              "actorOid":"oid-admin","actorRol":"ADMIN","estadoAnterior":"EN_PREPARACION"}
             """;
 
@@ -64,6 +66,7 @@ class AuditoriaConsumerTest {
         assertEquals("EN_PREPARACION", datos.estadoAnterior());
         assertEquals("DESPACHADO", datos.estadoNuevo());
         assertEquals("15", datos.entidadId());
+        assertEquals(EVENTO_NUEVO, datos.payload()); // el JSON original queda como respaldo
     }
 
     @Test
@@ -74,18 +77,22 @@ class AuditoriaConsumerTest {
 
         DatosEvento datos = guardado();
         assertNull(datos.actorOid());
-        assertNull(datos.actorRol());
         assertNull(datos.estadoAnterior());
         assertEquals("CREADO", datos.estadoNuevo());
     }
 
     @Test
-    void unEventoNuevoSePublicaEnElTimeline() {
+    void unEventoNuevoSePublicaComoDtoEnElTimeline() {
         when(servicio.registrarEvento(any())).thenReturn(true);
 
         consumidor.recibirEvento(EVENTO_NUEVO);
 
-        verify(timeline).publicarEvento("15", EVENTO_NUEVO);
+        ArgumentCaptor<EventoAuditadoDTO> publicado = ArgumentCaptor.forClass(EventoAuditadoDTO.class);
+        verify(timeline).publicar(publicado.capture());
+        assertEquals(15L, publicado.getValue().pedidoId());
+        assertEquals("OrderDispatched", publicado.getValue().tipoEvento());
+        assertEquals("ADMIN", publicado.getValue().actorRol());
+        assertEquals("wepay-ms-auditoria", publicado.getValue().origen());
     }
 
     @Test
@@ -94,12 +101,30 @@ class AuditoriaConsumerTest {
 
         consumidor.recibirEvento(EVENTO_NUEVO);
 
-        verify(timeline, never()).publicarEvento(anyString(), anyString());
+        verify(timeline, never()).publicar(any());
     }
 
     @Test
     void ignoraMensajesVacios() {
         consumidor.recibirEvento("  ");
+
+        verify(servicio, never()).registrarEvento(any());
+    }
+
+    @Test
+    void unEventoSinFechaSeRechazaParaQueVayaALaDlt() {
+        String roto = "{\"eventId\":\"demo-roto-1\",\"tipoEvento\":\"OrderCreated\",\"pedidoId\":1}";
+
+        IllegalArgumentException error =
+                assertThrows(IllegalArgumentException.class, () -> consumidor.recibirEvento(roto));
+
+        assertEquals("El evento demo-roto-1 no contiene fechaEvento", error.getMessage());
+        verify(servicio, never()).registrarEvento(any());
+    }
+
+    @Test
+    void unJsonMalFormadoTambienSeRechaza() {
+        assertThrows(RuntimeException.class, () -> consumidor.recibirEvento("esto no es json"));
 
         verify(servicio, never()).registrarEvento(any());
     }
