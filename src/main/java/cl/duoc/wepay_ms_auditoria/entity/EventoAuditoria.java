@@ -35,6 +35,16 @@ public class EventoAuditoria {
     // Desde dónde (Ej: Detalles técnicos, IP, origen, etc.)
     private String origen;
 
+    // Quién hizo el cambio (ADMIN, CLIENTE o SISTEMA). Null en eventos antiguos.
+    private String actorOid;
+
+    private String actorRol;
+
+    // De qué estado a qué estado pasó el pedido
+    private String estadoAnterior;
+
+    private String estadoNuevo;
+
     // El mensaje original en formato JSON (para trazabilidad completa)
     @Lob
     private String payload;
@@ -114,5 +124,37 @@ public class EventoAuditoria {
 
     public void setPayload(String payload) {
         this.payload = payload;
+    }
+
+    public String getActorOid() {
+        return actorOid;
+    }
+
+    public void setActorOid(String actorOid) {
+        this.actorOid = actorOid;
+    }
+
+    public String getActorRol() {
+        return actorRol;
+    }
+
+    public void setActorRol(String actorRol) {
+        this.actorRol = actorRol;
+    }
+
+    public String getEstadoAnterior() {
+        return estadoAnterior;
+    }
+
+    public void setEstadoAnterior(String estadoAnterior) {
+        this.estadoAnterior = estadoAnterior;
+    }
+
+    public String getEstadoNuevo() {
+        return estadoNuevo;
+    }
+
+    public void setEstadoNuevo(String estadoNuevo) {
+        this.estadoNuevo = estadoNuevo;
     }
 }

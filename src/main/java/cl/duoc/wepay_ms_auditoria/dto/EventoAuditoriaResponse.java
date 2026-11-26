@@ -9,5 +9,9 @@ public record EventoAuditoriaResponse(
         String entidadId,
         LocalDateTime fechaEvento,
         String origen,
-        String payload
+        String payload,
+        String actorOid,
+        String actorRol,
+        String estadoAnterior,
+        String estadoNuevo
 ) {}

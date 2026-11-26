@@ -1,5 +1,6 @@
 package cl.duoc.wepay_ms_auditoria.service;
 
+import cl.duoc.wepay_ms_auditoria.dto.DatosEvento;
 import cl.duoc.wepay_ms_auditoria.dto.EventoAuditoriaResponse;
 import cl.duoc.wepay_ms_auditoria.entity.EventoAuditoria;
 import cl.duoc.wepay_ms_auditoria.repository.EventoAuditoriaRepository;
@@ -19,14 +20,9 @@ public class AuditoriaService {
     }
 
     @Transactional
-    public boolean registrarEvento(
-            String eventId,
-            LocalDateTime fechaEvento,
-            String usuarioOid,
-            String tipoEvento,
-            String entidadId,
-            String origen,
-            String payload) {
+    public boolean registrarEvento(DatosEvento datos) {
+
+        String eventId = datos.eventId();
 
         if (eventId == null || eventId.isBlank()) {
             throw new IllegalArgumentException(
@@ -40,14 +36,18 @@ public class AuditoriaService {
         }
 
         EventoAuditoria evento = new EventoAuditoria(
-                usuarioOid,
-                tipoEvento,
-                entidadId,
-                fechaEvento,
-                origen,
-                payload);
+                datos.usuarioOid(),
+                datos.tipoEvento(),
+                datos.entidadId(),
+                datos.fechaEvento(),
+                datos.origen(),
+                datos.payload());
 
         evento.setEventId(eventId);
+        evento.setActorOid(datos.actorOid());
+        evento.setActorRol(datos.actorRol());
+        evento.setEstadoAnterior(datos.estadoAnterior());
+        evento.setEstadoNuevo(datos.estadoNuevo());
 
         repository.saveAndFlush(evento);
 
@@ -83,7 +83,11 @@ public class AuditoriaService {
                 e.getEntidadId(),
                 e.getFechaEvento(),
                 e.getOrigen(),
-                e.getPayload());
+                e.getPayload(),
+                e.getActorOid(),
+                e.getActorRol(),
+                e.getEstadoAnterior(),
+                e.getEstadoNuevo());
     }
 
     @Transactional(readOnly = true)
